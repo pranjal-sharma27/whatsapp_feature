@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ChatFlow — WhatsApp Clone</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --wa-green:#00a884;
+  --wa-green-dark:#008069;
+  --wa-green-light:#d9fdd3;
+  --wa-blue:#53bdeb;
+  --wa-panel:#111b21;
+  --wa-sidebar:#111b21;
+  --wa-sidebar-hover:#202c33;
+  --wa-chat-bg:#0b141a;
+  --wa-bubble-out:#005c4b;
+  --wa-bubble-in:#202c33;
+  --wa-text:#e9edef;
+  --wa-text-secondary:#8696a0;
+  --wa-border:#222d34;
+  --wa-input-bg:#2a3942;
+  --sticker-bg:#1f2c34;
+  --sticker-hover:#2a3942;
+}
+body{font-family:'Inter',sans-serif;background:var(--wa-panel);color:var(--wa-text);height:100vh;display:flex;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:380px;flex-shrink:0;border-right:1px solid var(--wa-border);display:flex;flex-direction:column;background:var(--wa-sidebar)}
+.sidebar-header{padding:10px 16px;display:flex;align-items:center;justify-content:space-between;background:var(--wa-sidebar-hover);min-height:60px}
+.my-avatar{width:40px;height:40px;border-radius:50%;background:var(--wa-green);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;cursor:pointer;flex-shrink:0}
+.header-icons{display:flex;gap:8px}
+.icon-btn{width:36px;height:36px;border-radius:50%;background:none;border:none;color:var(--wa-text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.icon-btn:hover{background:var(--wa-border)}
+.icon-btn svg{width:20px;height:20px}
+
+.search-bar{padding:8px 12px;background:var(--wa-sidebar)}
+.search-wrap{background:var(--wa-input-bg);border-radius:8px;display:flex;align-items:center;padding:8px 12px;gap:10px}
+.search-wrap svg{color:var(--wa-text-secondary);width:16px;height:16px;flex-shrink:0}
+.search-wrap input{background:none;border:none;outline:none;color:var(--wa-text);font-size:14px;flex:1;font-family:'Inter',sans-serif}
+.search-wrap input::placeholder{color:var(--wa-text-secondary)}
+
+.contacts{flex:1;overflow-y:auto}
+.contacts::-webkit-scrollbar{width:5px}
+.contacts::-webkit-scrollbar-thumb{background:var(--wa-border);border-radius:3px}
+
+.contact{display:flex;align-items:center;gap:13px;padding:12px 16px;cursor:pointer;transition:background .15s;border-bottom:1px solid var(--wa-border)}
+.contact:hover,.contact.active{background:var(--wa-sidebar-hover)}
+.contact-avatar{width:49px;height:49px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0}
+.contact-info{flex:1;min-width:0}
+.contact-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.contact-name{font-size:15px;font-weight:500;color:var(--wa-text)}
+.contact-time{font-size:12px;color:var(--wa-text-secondary)}
+.contact-preview{font-size:13px;color:var(--wa-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.unread-badge{background:var(--wa-green);color:#fff;font-size:11px;font-weight:700;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* ── CHAT AREA ── */
+.chat-area{flex:1;display:flex;flex-direction:column;background:var(--wa-chat-bg);position:relative;overflow:hidden}
+.chat-bg{position:absolute;inset:0;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");}
+
+.chat-header{position:relative;z-index:2;display:flex;align-items:center;gap:13px;padding:10px 16px;background:var(--wa-sidebar-hover);min-height:60px;border-bottom:1px solid var(--wa-border)}
+.chat-header-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;cursor:pointer}
+.chat-header-info{flex:1}
+.chat-header-name{font-size:15px;font-weight:600;color:var(--wa-text)}
+.chat-header-status{font-size:12px;color:var(--wa-green)}
+
+/* ── MESSAGES ── */
+.messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:4px;position:relative;z-index:1}
+.messages::-webkit-scrollbar{width:5px}
+.messages::-webkit-scrollbar-thumb{background:var(--wa-border);border-radius:3px}
+
+.msg-wrap{display:flex;flex-direction:column;max-width:65%}
+.msg-wrap.out{align-self:flex-end;align-items:flex-end}
+.msg-wrap.in{align-self:flex-start;align-items:flex-start}
+
+.bubble{padding:8px 12px 6px;border-radius:8px;position:relative;word-break:break-word}
+.msg-wrap.out .bubble{background:var(--wa-bubble-out);border-bottom-right-radius:2px}
+.msg-wrap.in .bubble{background:var(--wa-bubble-in);border-bottom-left-radius:2px}
+.bubble-text{font-size:14.2px;line-height:1.5;color:var(--wa-text)}
+.bubble-meta{display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-top:3px}
+.bubble-time{font-size:11px;color:var(--wa-text-secondary)}
+.tick{color:var(--wa-blue);font-size:13px}
+
+/* REACTIONS */
+.reactions{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.reaction-badge{
+  background:var(--wa-bubble-in);border:1px solid var(--wa-border);
+  border-radius:12px;padding:3px 8px;font-size:12px;font-weight:600;
+  color:var(--wa-text);cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;gap:4px;
+}
+.reaction-badge:hover{background:var(--wa-green-dark);border-color:var(--wa-green)}
+.reaction-badge .r-count{font-size:11px;color:var(--wa-text-secondary)}
+
+/* CONTEXT MENU */
+.ctx-menu{
+  position:fixed;background:var(--wa-input-bg);border:1px solid var(--wa-border);
+  border-radius:8px;padding:6px 0;z-index:100;min-width:160px;
+  box-shadow:0 4px 20px rgba(0,0,0,.4);
+  display:none;
+}
+.ctx-menu.show{display:block}
+.ctx-item{padding:10px 16px;font-size:14px;cursor:pointer;color:var(--wa-text);transition:background .1s;display:flex;align-items:center;gap:10px}
+.ctx-item:hover{background:var(--wa-sidebar-hover)}
+.ctx-item svg{width:16px;height:16px;color:var(--wa-text-secondary)}
+
+/* ── STICKER PANEL ── */
+.sticker-panel{
+  position:absolute;bottom:70px;left:50%;transform:translateX(-50%);
+  width:460px;background:var(--sticker-bg);border:1px solid var(--wa-border);
+  border-radius:14px;padding:16px;z-index:50;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+  display:none;
+}
+.sticker-panel.show{display:block;animation:popIn .2s ease}
+@keyframes popIn{from{opacity:0;transform:translateX(-50%) scale(.95)}to{opacity:1;transform:translateX(-50%) scale(1)}}
+
+.sticker-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sticker-title{font-size:14px;font-weight:600;color:var(--wa-text)}
+.sticker-close{background:none;border:none;color:var(--wa-text-secondary);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px;border-radius:4px}
+.sticker-close:hover{background:var(--wa-border);color:var(--wa-text)}
+
+.sticker-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.sticker{
+  background:var(--sticker-hover);border:1.5px solid var(--wa-border);
+  border-radius:10px;padding:7px 13px;font-size:13px;font-weight:600;
+  color:var(--wa-text);cursor:pointer;transition:all .15s;
+  user-select:none;
+}
+.sticker:hover{background:var(--wa-green-dark);border-color:var(--wa-green);color:#fff;transform:scale(1.05)}
+.sticker.selected{background:var(--wa-green);border-color:var(--wa-green);color:#fff}
+
+.add-sticker-row{display:flex;gap:8px}
+.sticker-input{
+  flex:1;background:var(--wa-input-bg);border:1px solid var(--wa-border);
+  border-radius:8px;padding:8px 12px;font-size:13px;color:var(--wa-text);
+  outline:none;font-family:'Inter',sans-serif;
+}
+.sticker-input:focus{border-color:var(--wa-green)}
+.sticker-input::placeholder{color:var(--wa-text-secondary)}
+.add-sticker-btn{
+  background:var(--wa-green);border:none;color:#fff;
+  padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;
+  cursor:pointer;transition:background .15s;white-space:nowrap;
+}
+.add-sticker-btn:hover{background:var(--wa-green-dark)}
+.sticker-hint{font-size:11px;color:var(--wa-text-secondary);margin-top:8px}
+
+/* ── INPUT BAR ── */
+.input-bar{position:relative;z-index:2;display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--wa-sidebar-hover);border-top:1px solid var(--wa-border)}
+.input-wrap{flex:1;background:var(--wa-input-bg);border-radius:24px;display:flex;align-items:center;padding:10px 16px;gap:10px}
+.input-wrap svg{color:var(--wa-text-secondary);width:22px;height:22px;cursor:pointer;flex-shrink:0}
+.msg-input{flex:1;background:none;border:none;outline:none;color:var(--wa-text);font-size:15px;font-family:'Inter',sans-serif;resize:none;height:24px;max-height:120px;line-height:1.4}
+.msg-input::placeholder{color:var(--wa-text-secondary)}
+.send-btn{width:48px;height:48px;border-radius:50%;background:var(--wa-green);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.send-btn:hover{background:var(--wa-green-dark)}
+.send-btn svg{width:22px;height:22px}
+
+/* ── EMPTY STATE ── */
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:var(--wa-text-secondary)}
+.empty-state svg{width:80px;height:80px;opacity:.3}
+.empty-state h3{font-size:22px;font-weight:300;color:var(--wa-text)}
+.empty-state p{font-size:14px;text-align:center;max-width:320px;line-height:1.6}
+
+/* DATE DIVIDER */
+.date-divider{display:flex;align-items:center;justify-content:center;margin:8px 0}
+.date-label{background:rgba(17,27,33,.85);border:1px solid var(--wa-border);border-radius:8px;padding:4px 12px;font-size:12px;color:var(--wa-text-secondary)}
+
+/* REPLY PREVIEW */
+.reply-preview{background:rgba(0,168,132,.1);border-left:3px solid var(--wa-green);border-radius:4px;padding:6px 10px;margin-bottom:4px;font-size:12px;color:var(--wa-text-secondary)}
+.reply-name{color:var(--wa-green);font-weight:600;margin-bottom:2px;font-size:12px}
+
+/* TYPING */
+.typing-indicator{display:flex;align-items:center;gap:4px;padding:10px 14px;background:var(--wa-bubble-in);border-radius:8px;border-bottom-left-radius:2px;width:fit-content}
+.dot{width:7px;height:7px;background:var(--wa-text-secondary);border-radius:50%;animation:bounce 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}
+.dot:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+@media(max-width:700px){.sidebar{width:100%;display:none}.sidebar.mobile-show{display:flex}}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="my-avatar">P</div>
+    <div class="header-icons">
+      <button class="icon-btn" title="New chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </button>
+      <button class="icon-btn" title="Menu">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="search-bar">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search or start new chat" oninput="filterContacts(this.value)"/>
+    </div>
+  </div>
+
+  <div class="contacts" id="contacts-list"></div>
+</div>
+
+<!-- CHAT AREA -->
+<div class="chat-area" id="chat-area">
+  <div class="chat-bg"></div>
+
+  <!-- Header -->
+  <div class="chat-header" id="chat-header" style="display:none">
+    <div class="chat-header-avatar" id="chat-avatar"></div>
+    <div class="chat-header-info">
+      <div class="chat-header-name" id="chat-name"></div>
+      <div class="chat-header-status" id="chat-status">online</div>
+    </div>
+    <div class="header-icons">
+      <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.84a16 16 0 0 0 6.29 6.29l1.69-1.69a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+      <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+      <button class="icon-btn"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div class="messages" id="messages">
+    <div class="empty-state" id="empty-state">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+      <h3>ChatFlow</h3>
+      <p>Select a chat to start messaging.<br/>Long-press any message to react with your custom text stickers! 🎯</p>
+    </div>
+  </div>
+
+  <!-- Sticker Panel -->
+  <div class="sticker-panel" id="sticker-panel">
+    <div class="sticker-header">
+      <span class="sticker-title">⚡ React with Text Sticker</span>
+      <button class="sticker-close" onclick="closeStickerPanel()">✕</button>
+    </div>
+    <div class="sticker-grid" id="sticker-grid"></div>
+    <div class="add-sticker-row">
+      <input class="sticker-input" id="new-sticker-input" placeholder="Create your sticker e.g. No way!" maxlength="30" onkeydown="if(event.key==='Enter')addSticker()"/>
+      <button class="add-sticker-btn" onclick="addSticker()">+ Add</button>
+    </div>
+    <div class="sticker-hint">💡 Click a sticker to react · Right-click to delete</div>
+  </div>
+
+  <!-- Input Bar -->
+  <div class="input-bar" id="input-bar" style="display:none">
+    <div class="input-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      <textarea class="msg-input" id="msg-input" placeholder="Type a message" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="cursor:pointer" onclick="toggleStickerPanel()" title="Text Stickers">
+        <path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z"/><path d="M20.5 10H19V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/><path d="M9.5 14c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5S8 21.33 8 20.5v-5c0-.83.67-1.5 1.5-1.5z"/><path d="M3.5 14H5v1.5c0 .83-.67 1.5-1.5 1.5S2 16.33 2 15.5 2.67 14 3.5 14z"/><path d="M14 14.5c0-.83.67-1.5 1.5-1.5h5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-5c-.83 0-1.5-.67-1.5-1.5z"/><path d="M15.5 19H14v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z"/><path d="M10 9.5C10 8.67 9.33 8 8.5 8h-5C2.67 8 2 8.67 2 9.5S2.67 11 3.5 11h5c.83 0 1.5-.67 1.5-1.5z"/><path d="M8.5 5H10V3.5C10 2.67 9.33 2 8.5 2S7 2.67 7 3.5 7.67 5 8.5 5z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+    </div>
+    <button class="send-btn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div class="ctx-menu" id="ctx-menu">
+  <div class="ctx-item" onclick="ctxReply()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+    Reply
+  </div>
+  <div class="ctx-item" onclick="ctxSticker()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+    React with Sticker
+  </div>
+  <div class="ctx-item" onclick="ctxCopy()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    Copy
+  </div>
+  <div class="ctx-item" onclick="ctxDelete()" style="color:#f15c6d">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#f15c6d" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+    Delete
+  </div>
+</div>
+
+<script>
+// ── DATA ────────────────────────────────────────────────────────────────────
+const contacts = [
+  {id:1, name:"Rahul Verma",    color:"#25d366", init:"R", status:"online",      unread:3,
+   msgs:[
+    {id:1,from:"in",text:"Hey bhai! Kya scene hai?",time:"9:14 AM"},
+    {id:2,from:"out",text:"Sab badhiya yaar. Tu bata?",time:"9:15 AM"},
+    {id:3,from:"in",text:"Aaj college jaana hai kya?",time:"9:15 AM"},
+    {id:4,from:"out",text:"Ha yaar, 11 baje class hai",time:"9:16 AM"},
+    {id:5,from:"in",text:"Okay okay. Library mein milte hain pehle.",time:"9:17 AM"},
+   ]},
+  {id:2, name:"Priya Patel",    color:"#9c27b0", init:"P", status:"last seen 2h ago", unread:0,
+   msgs:[
+    {id:1,from:"in",text:"Assignment submit kiya?",time:"Yesterday"},
+    {id:2,from:"out",text:"Haan kal raat hi kar diya!",time:"Yesterday"},
+    {id:3,from:"in",text:"Nice! Notes share kar please 🙏",time:"Yesterday"},
+   ]},
+  {id:3, name:"Dev Squad 🚀",   color:"#ff6b35", init:"D", status:"4 members", unread:12,
+   msgs:[
+    {id:1,from:"in",text:"Hackathon registration open hai!",time:"10:00 AM",name:"Arjun"},
+    {id:2,from:"out",text:"Serious?! Link bhej",time:"10:02 AM"},
+    {id:3,from:"in",text:"https://sih.gov.in — jaldi karo deadline kal hai",time:"10:03 AM",name:"Arjun"},
+    {id:4,from:"in",text:"Main bhi join karna chahta hun",time:"10:05 AM",name:"Karan"},
+   ]},
+  {id:4, name:"Mom 🌸",         color:"#e91e63", init:"M", status:"online",      unread:1,
+   msgs:[
+    {id:1,from:"in",text:"Beta khana khaya?",time:"1:00 PM"},
+    {id:2,from:"out",text:"Haan maa, abhi kha raha hun",time:"1:05 PM"},
+    {id:3,from:"in",text:"Okay. Padhai kar le achhe se 💕",time:"1:06 PM"},
+   ]},
+  {id:5, name:"Internship Hunt", color:"#607d8b", init:"I", status:"last seen 1h ago", unread:0,
+   msgs:[
+    {id:1,from:"in",text:"Bhai LinkedIn update kiya?",time:"11:00 AM"},
+    {id:2,from:"out",text:"Haan kal kiya. Portfolio bhi ready hai!",time:"11:05 AM"},
+    {id:3,from:"in",text:"Solid! Swiggy aur Razorpay apply karo",time:"11:06 AM"},
+   ]},
+];
+
+let defaultStickers = ["👍 OK", "Jai Hind 🇮🇳", "Goodbye 👋", "I doubt it 🤔", "No way!", "Exactly!", "Wow 😲", "Hahaha 😂", "Facts 💯", "Chill kar"];
+let customStickers = JSON.parse(localStorage.getItem('chatflow-stickers') || '[]');
+let stickers = [...defaultStickers, ...customStickers];
+
+let activeContact = null;
+let ctxMsgId = null;
+let replyTo = null;
+
+// ── RENDER CONTACTS ──────────────────────────────────────────────────────────
+function renderContacts(list = contacts) {
+  const el = document.getElementById('contacts-list');
+  el.innerHTML = list.map(c => `
+    <div class="contact ${activeContact?.id===c.id?'active':''}" onclick="openChat(${c.id})">
+      <div class="contact-avatar" style="background:${c.color}">${c.init}</div>
+      <div class="contact-info">
+        <div class="contact-top">
+          <span class="contact-name">${c.name}</span>
+          <span class="contact-time">${c.msgs.at(-1)?.time||''}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span class="contact-preview">${c.msgs.at(-1)?.text||'No messages yet'}</span>
+          ${c.unread ? `<span class="unread-badge">${c.unread}</span>` : ''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function filterContacts(q) {
+  renderContacts(contacts.filter(c => c.name.toLowerCase().includes(q.toLowerCase())));
+}
+
+// ── OPEN CHAT ────────────────────────────────────────────────────────────────
+function openChat(id) {
+  activeContact = contacts.find(c => c.id === id);
+  activeContact.unread = 0;
+  replyTo = null;
+  renderContacts();
+
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('chat-header').style.display = 'flex';
+  document.getElementById('input-bar').style.display = 'flex';
+
+  const av = document.getElementById('chat-avatar');
+  av.textContent = activeContact.init;
+  av.style.background = activeContact.color;
+  document.getElementById('chat-name').textContent = activeContact.name;
+  document.getElementById('chat-status').textContent = activeContact.status;
+
+  renderMessages();
+  closeStickerPanel();
+}
+
+// ── RENDER MESSAGES ──────────────────────────────────────────────────────────
+function renderMessages() {
+  const el = document.getElementById('messages');
+  const msgs = activeContact.msgs;
+
+  // group by date
+  let html = `<div class="date-divider"><span class="date-label">Today</span></div>`;
+
+  msgs.forEach(m => {
+    const reactions = m.reactions && m.reactions.length
+      ? `<div class="reactions">${m.reactions.map(r=>`<span class="reaction-badge" title="${r.by}">${r.text} <span class="r-count">${r.count>1?r.count:''}</span></span>`).join('')}</div>`
+      : '';
+
+    const replyBlock = m.replyTo
+      ? `<div class="reply-preview"><div class="reply-name">${m.replyTo.from==='out'?'You':activeContact.name}</div>${m.replyTo.text}</div>`
+      : '';
+
+    const nameTag = m.name ? `<div style="font-size:12px;color:${activeContact.color};font-weight:600;margin-bottom:3px">${m.name}</div>` : '';
+
+    html += `
+      <div class="msg-wrap ${m.from}" id="msg-${m.id}"
+           oncontextmenu="showCtxMenu(event,${m.id})"
+           ondblclick="showStickerPanel(${m.id})">
+        <div class="bubble">
+          ${nameTag}
+          ${replyBlock}
+          <div class="bubble-text">${m.text}</div>
+          <div class="bubble-meta">
+            <span class="bubble-time">${m.time}</span>
+            ${m.from==='out'?'<span class="tick">✓✓</span>':''}
+          </div>
+        </div>
+        ${reactions}
+      </div>`;
+  });
+
+  el.innerHTML = html;
+  el.scrollTop = el.scrollHeight;
+}
+
+// ── SEND MESSAGE ─────────────────────────────────────────────────────────────
+function sendMessage() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text || !activeContact) return;
+
+  const newMsg = {
+    id: Date.now(),
+    from: 'out',
+    text,
+    time: new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),
+    reactions: [],
+    replyTo: replyTo ? {...replyTo} : null,
+  };
+
+  activeContact.msgs.push(newMsg);
+  replyTo = null;
+  input.value = '';
+  input.style.height = '24px';
+  renderMessages();
+  renderContacts();
+
+  // Simulate reply
+  setTimeout(() => {
+    const replies = ["Ha ha theek hai!", "Accha suna!", "Okay okay 👍", "Samajh gaya!", "Bata dena baad mein"];
+    activeContact.msgs.push({
+      id: Date.now()+1, from:'in',
+      text: replies[Math.floor(Math.random()*replies.length)],
+      time: new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),
+      reactions:[]
+    });
+    renderMessages();
+    renderContacts();
+  }, 1200);
+}
+
+function handleKey(e) {
+  if(e.key==='Enter' && !e.shiftKey){e.preventDefault();sendMessage();}
+}
+function autoResize(el) {
+  el.style.height='24px';
+  el.style.height=Math.min(el.scrollHeight,120)+'px';
+}
+
+// ── CONTEXT MENU ─────────────────────────────────────────────────────────────
+function showCtxMenu(e, msgId) {
+  e.preventDefault();
+  ctxMsgId = msgId;
+  const menu = document.getElementById('ctx-menu');
+  menu.style.left = Math.min(e.clientX, window.innerWidth-170)+'px';
+  menu.style.top  = Math.min(e.clientY, window.innerHeight-160)+'px';
+  menu.classList.add('show');
+}
+document.addEventListener('click', () => document.getElementById('ctx-menu').classList.remove('show'));
+
+function ctxReply() {
+  const msg = activeContact.msgs.find(m=>m.id===ctxMsgId);
+  if(msg) { replyTo = msg; document.getElementById('msg-input').focus(); }
+}
+function ctxSticker() { showStickerPanel(ctxMsgId); }
+function ctxCopy() {
+  const msg = activeContact.msgs.find(m=>m.id===ctxMsgId);
+  if(msg) navigator.clipboard.writeText(msg.text).catch(()=>{});
+}
+function ctxDelete() {
+  activeContact.msgs = activeContact.msgs.filter(m=>m.id!==ctxMsgId);
+  renderMessages(); renderContacts();
+}
+
+// ── STICKER PANEL ────────────────────────────────────────────────────────────
+let stickerTargetId = null;
+
+function showStickerPanel(msgId) {
+  stickerTargetId = msgId;
+  renderStickerGrid();
+  document.getElementById('sticker-panel').classList.add('show');
+}
+
+function closeStickerPanel() {
+  document.getElementById('sticker-panel').classList.remove('show');
+  stickerTargetId = null;
+}
+
+function renderStickerGrid() {
+  const grid = document.getElementById('sticker-grid');
+  grid.innerHTML = stickers.map((s,i) => `
+    <div class="sticker" onclick="applySticker('${s.replace(/'/g,"\\'")}')">
+      ${s}
+    </div>`).join('');
+}
+
+function applySticker(text) {
+  const msg = activeContact.msgs.find(m => m.id === stickerTargetId);
+  if (!msg) return;
+  if (!msg.reactions) msg.reactions = [];
+
+  const existing = msg.reactions.find(r => r.text === text);
+  if (existing) { existing.count++; }
+  else { msg.reactions.push({text, by:'You', count:1}); }
+
+  renderMessages();
+  closeStickerPanel();
+}
+
+function addSticker() {
+  const input = document.getElementById('new-sticker-input');
+  const val = input.value.trim();
+  if (!val || stickers.includes(val)) { input.focus(); return; }
+  customStickers.push(val);
+  stickers.push(val);
+  localStorage.setItem('chatflow-stickers', JSON.stringify(customStickers));
+  input.value = '';
+  renderStickerGrid();
+}
+
+function toggleStickerPanel() {
+  const panel = document.getElementById('sticker-panel');
+  if(panel.classList.contains('show')) { closeStickerPanel(); }
+  else {
+    stickerTargetId = activeContact?.msgs.at(-1)?.id || null;
+    renderStickerGrid();
+    panel.classList.add('show');
+  }
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+renderContacts();
+// open first chat by default
+openChat(1);
+</script>
+</body>
+</html>
